@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 UPLOAD_DIR = "uploads"
-TEMPLATE_PATH = "templates/Tenant Welcome Pack Template.docx"
+TEMPLATE_PATH = "templates\Tenant Welcome Pack Template.docx"
 
 @app.post("/process-lease")
 async def process_lease(file: UploadFile = File(...)):
