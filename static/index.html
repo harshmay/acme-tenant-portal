@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acme Tenant Portal</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --error: #b91c1c;
+      --error-soft: #fee2e2;
+      --success: #166534;
+      --success-soft: #dcfce7;
+      --shadow: 0 10px 28px rgba(17, 24, 39, 0.08);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(760px, 92%);
+      margin: 48px auto;
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .brand p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(20px, 3vw, 34px);
+    }
+
+    .upload-title {
+      margin: 0 0 12px;
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .drop-zone {
+      display: block;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: clamp(22px, 4vw, 34px);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+      background: #fafafa;
+    }
+
+    .drop-zone:hover {
+      border-color: var(--accent);
+      background: #f8fbff;
+      transform: translateY(-1px);
+    }
+
+    .drop-zone.dragging {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .drop-zone strong {
+      display: block;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+    }
+
+    .drop-zone span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .selected-file {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fcfcfc;
+      color: #374151;
+      font-size: 0.94rem;
+      word-break: break-word;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 11px 16px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-secondary {
+      background: #eef2f7;
+      color: #374151;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .status {
+      margin-top: 18px;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: none;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .status.show {
+      display: block;
+    }
+
+    .status.error {
+      background: var(--error-soft);
+      color: var(--error);
+      border: 1px solid #fecaca;
+    }
+
+    .status.success {
+      background: var(--success-soft);
+      color: var(--success);
+      border: 1px solid #bbf7d0;
+    }
+
+    .status.info {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #bfdbfe;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .download-wrap {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .download-wrap.show {
+      display: block;
+    }
+
+    .download-wrap button {
+      background: #15803d;
+      color: #fff;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        margin-top: 24px;
+      }
+
+      .controls {
+        justify-content: stretch;
+      }
+
+      .controls button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="brand">
+      <h1>Acme Tenant Portal</h1>
+      <p>Upload a lease agreement to generate a Tenant Welcome Pack.</p>
+    </section>
+
+    <section class="card">
+      <p class="upload-title">Drag and drop your lease file here</p>
+      <label id="dropZone" class="drop-zone" for="fileInput">
+        <strong>Drop file here</strong>
+        <span>or click to browse (.pdf or .docx only)</span>
+      </label>
+      <input id="fileInput" type="file" accept=".pdf,.docx">
+
+      <div id="selectedFile" class="selected-file" style="display:none;"></div>
+
+      <div class="controls">
+        <button id="clearBtn" type="button" class="btn-secondary" disabled>Clear</button>
+        <button id="uploadBtn" type="button" class="btn-primary" disabled>Process Lease</button>
+      </div>
+
+      <div id="loadingStatus" class="status info" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <div>Processing your lease document. This may take a moment...</div>
+      </div>
+
+      <div id="errorStatus" class="status error" aria-live="polite"></div>
+      <div id="successStatus" class="status success" aria-live="polite"></div>
+
+      <div id="downloadWrap" class="download-wrap">
+        <button id="downloadBtn" type="button">Download Welcome Pack</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const allowedExtensions = [".pdf", ".docx"];
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const selectedFile = document.getElementById("selectedFile");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const loadingStatus = document.getElementById("loadingStatus");
+      const errorStatus = document.getElementById("errorStatus");
+      const successStatus = document.getElementById("successStatus");
+      const downloadWrap = document.getElementById("downloadWrap");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      let currentFile = null;
+      let lastBlob = null;
+
+      function resetStatus() {
+        [loadingStatus, errorStatus, successStatus].forEach((el) => {
+          el.classList.remove("show");
+          el.textContent = el.id === "loadingStatus" ? el.textContent : "";
+        });
+        downloadWrap.classList.remove("show");
+      }
+
+      function showError(message) {
+        resetStatus();
+        errorStatus.textContent = message;
+        errorStatus.classList.add("show");
+      }
+
+      function showLoading() {
+        resetStatus();
+        loadingStatus.classList.add("show");
+      }
+
+      function showSuccess(message) {
+        resetStatus();
+        successStatus.textContent = message;
+        successStatus.classList.add("show");
+      }
+
+      function updateFileState(file) {
+        currentFile = file;
+        lastBlob = null;
+        resetStatus();
+
+        if (!file) {
+          selectedFile.style.display = "none";
+          selectedFile.textContent = "";
+          uploadBtn.disabled = true;
+          clearBtn.disabled = true;
+          return;
+        }
+
+        selectedFile.style.display = "block";
+        selectedFile.textContent = "Selected file: " + file.name;
+        uploadBtn.disabled = false;
+        clearBtn.disabled = false;
+      }
+
+      function isValidLeaseFile(file) {
+        const name = (file && file.name ? file.name : "").toLowerCase();
+        return allowedExtensions.some((ext) => name.endsWith(ext));
+      }
+
+      function triggerDownload(blob, fileName) {
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = fileName || "Tenant_Welcome_Pack.docx";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      async function processLease() {
+        if (!currentFile) {
+          showError("Please select a lease file first.");
+          return;
+        }
+
+        if (!isValidLeaseFile(currentFile)) {
+          showError("Invalid file type. Please upload a .pdf or .docx file.");
+          return;
+        }
+
+        showLoading();
+        uploadBtn.disabled = true;
+        clearBtn.disabled = true;
+
+        try {
+          const formData = new FormData();
+          formData.append("file", currentFile);
+
+          const response = await fetch("/process-lease", {
+            method: "POST",
+            body: formData
+          });
+
+          if (!response.ok) {
+            let errorMessage = "Unable to process the lease. Please try again.";
+            try {
+              const payload = await response.json();
+              if (payload && payload.detail) {
+                errorMessage = typeof payload.detail === "string"
+                  ? payload.detail
+                  : JSON.stringify(payload.detail);
+              }
+            } catch (_) {
+              // Keep generic error when response is not JSON.
+            }
+            throw new Error(errorMessage);
+          }
+
+          const blob = await response.blob();
+          lastBlob = blob;
+          showSuccess("Welcome Pack is ready.");
+          downloadWrap.classList.add("show");
+          triggerDownload(blob, "Tenant_Welcome_Pack.docx");
+        } catch (error) {
+          const message = error && error.message
+            ? error.message
+            : "Something went wrong while processing your file.";
+          showError(message);
+        } finally {
+          uploadBtn.disabled = false;
+          clearBtn.disabled = false;
+          loadingStatus.classList.remove("show");
+        }
+      }
+
+      dropZone.addEventListener("dragover", function (event) {
+        event.preventDefault();
+        dropZone.classList.add("dragging");
+      });
+
+      dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("dragging");
+      });
+
+      dropZone.addEventListener("drop", function (event) {
+        event.preventDefault();
+        dropZone.classList.remove("dragging");
+
+        const file = event.dataTransfer && event.dataTransfer.files
+          ? event.dataTransfer.files[0]
+          : null;
+
+        if (!file) {
+          return;
+        }
+
+        if (!isValidLeaseFile(file)) {
+          updateFileState(null);
+          showError("Invalid file type. Please upload a .pdf or .docx file.");
+          return;
+        }
+
+        updateFileState(file);
+      });
+
+      fileInput.addEventListener("change", function () {
+        const file = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+
+        if (!file) {
+          updateFileState(null);
+          return;
+        }
+
+        if (!isValidLeaseFile(file)) {
+          fileInput.value = "";
+          updateFileState(null);
+          showError("Invalid file type. Please upload a .pdf or .docx file.");
+          return;
+        }
+
+        updateFileState(file);
+      });
+
+      uploadBtn.addEventListener("click", processLease);
+
+      clearBtn.addEventListener("click", function () {
+        fileInput.value = "";
+        updateFileState(null);
+      });
+
+      downloadBtn.addEventListener("click", function () {
+        if (lastBlob) {
+          triggerDownload(lastBlob, "Tenant_Welcome_Pack.docx");
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import pdfplumber
 import json
 import os
 from dotenv import load_dotenv
+from docx import Document as DocxDocument
 
 
 load_dotenv()
@@ -33,6 +34,10 @@ Return ONLY the JSON. No explanation, no markdown, no code fences.
 
 Lease text:
 """
+def extract_text_from_docx(file_path: str) -> str:
+    doc = DocxDocument(file_path)
+    return "\n".join([para.text for para in doc.paragraphs])
+
 
 def extract_text_from_pdf(file_path: str) -> str:
     text = ""
@@ -42,9 +47,12 @@ def extract_text_from_pdf(file_path: str) -> str:
     return text
 
 def extract_fields(file_path: str) -> dict:
-    text = extract_text_from_pdf(file_path)
+    if file_path.endswith(".docx"):
+        text = extract_text_from_docx(file_path)
+    else:
+        text = extract_text_from_pdf(file_path)
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents= FIELDS_PROMPT + text
     )
     raw = response.text.strip()
