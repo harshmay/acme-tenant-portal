@@ -23,7 +23,7 @@ app.add_middleware(
 )
 
 UPLOAD_DIR = "uploads"
-TEMPLATE_PATH = "templates\Tenant Welcome Pack Template.docx"
+TEMPLATE_PATH = os.path.join(BASE_DIR, "templates", "Tenant Welcome Pack Template.docx")
 
 # Supabase
 supabase = create_client(
