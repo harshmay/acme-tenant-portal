@@ -1,6 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from supabase import create_client
 import shutil
@@ -50,7 +49,7 @@ async def process_lease(file: UploadFile = File(...)):
         output_path = os.path.join(UPLOAD_DIR, output_filename)
         generate_welcome_pack(fields, TEMPLATE_PATH, output_path)
 
-                # Save to Supabase — lease upload record
+        # Save to Supabase — lease upload record
         upload_record = supabase.table("lease_uploads").insert({
             "original_filename": file.filename,
             "tenant_name": fields.get("tenant_name"),
@@ -83,20 +82,23 @@ async def process_lease(file: UploadFile = File(...)):
         # Get public URL
         file_url = supabase.storage.from_("documents").get_public_url(output_filename)
 
-                # Save generated document record
+        # Save generated document record
         supabase.table("generated_documents").insert({
             "lease_upload_id": lease_id,
             "output_filename": output_filename,
             "file_url": file_url
         }).execute()
 
+        try:
+            os.remove(output_path)
+            os.remove(file_path)
+        except OSError:
+            pass
 
-        # Return the file for download
-        return FileResponse(
-            output_path,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            filename="Tenant_Welcome_Pack.docx"
-        )
+        return {
+            "message": "Your Tenant Welcome Pack has been uploaded successfully.",
+            "file_url": file_url,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
