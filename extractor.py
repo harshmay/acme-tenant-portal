@@ -60,7 +60,7 @@ def extract_text_from_pdf(file_path: str) -> str:
 def extract_fields(file_path: str) -> dict:
     if file_path.endswith(".docx"):
         text = extract_text_from_docx(file_path)
-    else:
+    elif file_path.endswith(".pdf"):
         text = extract_text_from_pdf(file_path)
     response = client.models.generate_content(
         model="gemini-2.5-flash-lite",
