@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from supabase import create_client
 import shutil
@@ -19,6 +20,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Upload-Message"],
 )
 
 UPLOAD_DIR = "uploads"
@@ -31,8 +33,16 @@ supabase = create_client(
 )
 
 
+def _cleanup_paths(*paths: str) -> None:
+    for p in paths:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+
 @app.post("/process-lease")
-async def process_lease(file: UploadFile = File(...)):
+async def process_lease(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
     # Save uploaded file
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_path = os.path.join(UPLOAD_DIR, file.filename)
@@ -89,16 +99,17 @@ async def process_lease(file: UploadFile = File(...)):
             "file_url": file_url
         }).execute()
 
-        try:
-            os.remove(output_path)
-            os.remove(file_path)
-        except OSError:
-            pass
+        upload_message = (
+            "Your Tenant Welcome Pack has been uploaded to the cloud and is downloading to your device."
+        )
+        background_tasks.add_task(_cleanup_paths, output_path, file_path)
 
-        return {
-            "message": "Your Tenant Welcome Pack has been uploaded successfully.",
-            "file_url": file_url,
-        }
+        return FileResponse(
+            output_path,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            filename="Tenant_Welcome_Pack.docx",
+            headers={"X-Upload-Message": upload_message},
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
